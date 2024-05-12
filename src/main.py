@@ -9,10 +9,11 @@ testing_company = FastAPI(
 )
 
 
-@testing_company.get("/", description="Ping APP", name="Get rout For Ping")
-def start_answer() -> dict:
+@testing_company.post("/", description="Ping APP", name="Get rout For Ping", status_code=201)
+def start_answer(msg: str) -> dict:
     """Check the tests and e.t.c."""
     return {
+        "args": {"up": msg.upper(), "low": msg.lower(), "base": msg.title()},
         "answer": "Success",
     }
 
