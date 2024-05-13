@@ -19,7 +19,7 @@ class MainState(StatesGroup):
 
 @dp.message_handler(Command('start'), state="*")
 async def cmd_hello(message: types.Message, state: FSMContext):
-    await state.finish()
+    print("+")
     content = f"Здравствуй, {message.from_user.full_name}"
     await message.answer(
         content,

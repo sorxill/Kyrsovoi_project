@@ -1,4 +1,6 @@
-"""Main endpoint."""
+"""
+Основная точка запуска FastAPI приложения. (Запуска API сервера).
+"""
 
 import uvicorn
 from fastapi import FastAPI
@@ -9,7 +11,14 @@ testing_company = FastAPI(
 )
 
 
-@testing_company.post("/", description="Ping APP", name="Get rout For Ping", status_code=201)
+@testing_company.get("/", name="Ping API", description="Test pinging API", status_code=200)
+def ping_server() -> dict:
+    return {
+        "status_code": "200 OK"
+    }
+
+
+@testing_company.post("/text", description="Test working post", name="Up/Low/Title", status_code=201)
 def start_answer(msg: str) -> dict:
     """Check the tests and e.t.c."""
     return {
