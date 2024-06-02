@@ -1,6 +1,6 @@
 from aiogram.types.reply_keyboard import ReplyKeyboardMarkup
 
-from .keyboard_button import KeyButton
+from bot.keyboards.keyboard_button import KeyButton
 
 keyboard_for_start = ReplyKeyboardMarkup(resize_keyboard=True)
 

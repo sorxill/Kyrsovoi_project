@@ -3,8 +3,9 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command, Text
 from aiogram.types import Message, ReplyKeyboardRemove
 
-from keyboards import keyboard_for_start, keyboard_for_choose_test
-from states.states import MainState
+from bot.keyboards.keyboard_for_choose_test import choose_test_keyboard
+from bot.keyboards.keyboard_for_start import keyboard_for_start
+from bot.states.states import MainState
 
 
 async def cmd_hello(message: Message, state: FSMContext) -> None:
@@ -28,7 +29,7 @@ async def cmd_hello(message: Message, state: FSMContext) -> None:
     content = f"Выберите что Вам нужно, {message.from_user.full_name}:"
 
     # Клавиатура для прикрепления к сообщению.
-    keyboard = keyboard_for_start.keyboard_for_start
+    keyboard = keyboard_for_start
 
     # Отправляем сообщение и прикрепляем к нему клавиатуру основного меню.
     await message.answer(
@@ -81,7 +82,7 @@ async def create_test(message: Message, state: FSMContext):
     content = "Хотите создать тест:"
 
     # Клавиатура для прикрепления к сообщению. "ДА" / "НЕТ".
-    keyboard_for_choose_create_test = keyboard_for_choose_test.choose_test_keyboard
+    keyboard_for_choose_create_test = choose_test_keyboard
 
     # Отправка сообщения в чат, с выбором да/нет.
     await message.answer(

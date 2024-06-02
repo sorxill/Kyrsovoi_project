@@ -9,7 +9,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
 from routers.start_router import register_base_commands
-from bot_config import TG_TOKEN
+from config.app_config import TG_TOKEN
 
 
 # @dp.message_handler()
