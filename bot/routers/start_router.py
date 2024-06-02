@@ -3,6 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command, Text
 from aiogram.types import Message, ReplyKeyboardRemove
 
+from bot.db.postgres import get_user_data
 from bot.keyboards.keyboard_for_choose_test import choose_test_keyboard
 from bot.keyboards.keyboard_for_start import keyboard_for_start
 from bot.states.states import MainState
@@ -104,7 +105,17 @@ async def show_profile(message: Message, state: FSMContext):
     :return: None. Сообщение с информацией профиля.
     """
     # Текст сообщения, которое мы отправим.
-    content = "Вот твой профиль:"
+    content = ""
+
+    is_exist = await get_user_data(message.from_user.id)
+    if not is_exist:
+
+        user_id, all_test, good_tests = await get_user_data(message.from_user.id, is_create=True)
+    else:
+        user_id, all_test, good_tests = await get_user_data(message.from_user.id)
+
+    content += (f"ID пользователя: {user_id}\n\nКоличество пройденных тестов: {all_test}\n\nПоложительных тестов: "
+                f"{good_tests}")
 
     # Вызываем класс удаления клавиатуры у сообщения. Поэтому в конце у класса стоит "()".
     keyboard = ReplyKeyboardRemove()
