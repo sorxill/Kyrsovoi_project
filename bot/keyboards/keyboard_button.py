@@ -6,5 +6,3 @@ class KeyButton:
     create_testing = types.KeyboardButton(text="Создать тест")
     profile = types.KeyboardButton(text="Профиль")
     contacts_with_dev = types.KeyboardButton(text="Тех. Поддержка")
-    yes = types.KeyboardButton(text="Да")
-    no = types.KeyboardButton(text="Нет")

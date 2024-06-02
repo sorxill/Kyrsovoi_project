@@ -12,12 +12,6 @@ from routers.start_router import register_base_commands
 from config.app_config import TG_TOKEN
 
 
-# @dp.message_handler()
-# async def echo(message: Message):
-#     response = requests.post(f"http://127.0.0.1:8000/?msg={message.text}")
-#     ans = json.loads(response.text).get("args")
-#     await message.answer(f"{ans['up']}, {ans['low']}, {ans['base']}")
-
 # регистрация хендлера
 def register_all_handlers(dp):
     register_base_commands(dp)

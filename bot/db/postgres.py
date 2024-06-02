@@ -3,16 +3,18 @@ from typing import Any
 import psycopg2
 from psycopg2 import Error
 
+from config.app_config import DB_USER, DB_PORT, DB_PASS, DB_NAME, DB_HOST
+
 
 async def get_user_data(user_id: int, user_name: str, is_create: bool = False) -> Any | None:
     try:
         # Подключение к существующей базе данных
-        connection = psycopg2.connect(user="admin",
+        connection = psycopg2.connect(user=DB_USER,
                                       # пароль, который указали при установке PostgreSQL
-                                      password="admin",
-                                      host="127.0.0.1",
-                                      port="5432",
-                                      database="kyrs",
+                                      password=DB_PASS,
+                                      host=DB_HOST,
+                                      port=DB_PORT,
+                                      database=DB_NAME,
                                       )
 
         # Курсор для выполнения операций с базой данных
@@ -41,12 +43,12 @@ async def get_user_data(user_id: int, user_name: str, is_create: bool = False) -
 async def add_stats_for_user(user_id: int, is_good: bool) -> None:
     try:
         # Подключение к существующей базе данных
-        connection = psycopg2.connect(user="postgres",
+        connection = psycopg2.connect(user=DB_USER,
                                       # пароль, который указали при установке PostgreSQL
-                                      password="postgres",
-                                      host="127.0.0.1",
-                                      port="5432",
-                                      database="kyrs",
+                                      password=DB_PASS,
+                                      host=DB_HOST,
+                                      port=DB_PORT,
+                                      database=DB_NAME,
                                       )
 
         # Курсор для выполнения операций с базой данных

@@ -1,3 +1,4 @@
+import requests
 from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command, Text
@@ -25,23 +26,27 @@ async def cmd_hello(message: Message, state: FSMContext) -> None:
     # Завершаем все прошлые состояния.
     await state.finish()
 
-    # Формируем текст ответа, используя f-строку для вставки полного имени из данных сообщения.
-    content = f"Выберите что Вам нужно, {message.from_user.full_name}:"
+    if message.text == "/start":
+        # Формируем текст ответа, используя f-строку для вставки полного имени из данных сообщения.
+        content = f"Выберите что Вам нужно, {message.from_user.full_name}:"
 
-    # Клавиатура для прикрепления к сообщению.
-    keyboard = keyboard_for_start
+        # Клавиатура для прикрепления к сообщению.
+        keyboard = keyboard_for_start
 
-    # Отправляем сообщение и прикрепляем к нему клавиатуру основного меню.
-    await message.answer(
-        text=content,
-        reply_markup=keyboard,
-    )
+        # Отправляем сообщение и прикрепляем к нему клавиатуру основного меню.
+        await message.answer(
+            text=content,
+            reply_markup=keyboard,
+        )
 
-    # Удаляем сообщение с командой "/start".
-    await message.delete()
+        # Удаляем сообщение с командой "/start".
+        await message.delete()
 
-    # Устанавливаем состояние на состояние основного меню.
-    await state.set_state(MainState.start_state.state)
+        # Устанавливаем состояние на состояние основного меню.
+        await state.set_state(MainState.start_state.state)
+    else:
+        # Устанавливаем состояние на состояние основного меню.
+        await state.set_state(MainState.start_state.state)
 
 
 async def go_to_test(message: Message, state: FSMContext):
@@ -54,18 +59,34 @@ async def go_to_test(message: Message, state: FSMContext):
     :return: None. Сообщение с выбором нужного теста. И клавиатурой.
     """
     # Текст сообщения, которое мы отправим.
-    content = "Выбери нужный тест:"
+    content = "Чтобы выбрать тест напишите и отправьте название теста без пробелов и в нужном регистре.\n\n"
 
-    # Отправка сообщения в чат, с выбором тестов.
-    await message.answer(
-        text=content,
-    )
+    list_all_test = await list_test()
 
-    # Удаляем сообщение "Пройти тест", чтобы не засорять чат.
-    await message.delete()
+    if len(list_all_test) != 0:
 
-    # Устанавливаем состояние выбора тестов.
-    await state.set_state(MainState.choose_test.state)
+        # Вызываем класс удаления клавиатуры у сообщения. Поэтому в конце у класса стоит "()".
+        keyboard = ReplyKeyboardRemove()
+
+        for i in range(len(list_all_test)):
+            content += f"{i + 1}) {list_all_test[i][0]}\n"
+
+        # Отправка сообщения в чат, с выбором тестов.
+        await message.answer(
+            text=content,
+            reply_markup=keyboard,
+        )
+
+        # Удаляем сообщение "Пройти тест", чтобы не засорять чат.
+        await message.delete()
+
+        # Устанавливаем состояние выбора тестов.
+        await state.set_state(MainState.choose_test.state)
+    else:
+        await message.answer(
+            text="Сейчас нет никаких доступных тестов."
+        )
+        await cmd_hello(message, state)
 
 
 async def create_test(message: Message, state: FSMContext):
@@ -82,14 +103,20 @@ async def create_test(message: Message, state: FSMContext):
     content = "Для создания текста необходимо написать 10 вопросов и ответов к ним в определенном формате, " \
               "описанном ниже.\nОбязательные параметры для корректного теста:\n - КАЖДЫЙ вопрос оканчивается '?'\n" \
               "- Чтобы корректно составить тест необходимо вводить вопрос ответ СТРОГО в заданном формате, учитывая " \
-              "пробелы, знаки препинания и т.д\n- КАЖДЫЙ тест должен иметь название\n\n" \
+              "пробелы, знаки препинания и т.д\n- КАЖДЫЙ тест должен иметь УНИКАЛЬНОЕ название.\n\n!!! Если хотите " \
+              "добавить 10 вопросов к уже существующему тесту - напишите его название, без пробелов(как он записан" \
+              " при выборе тестов) и дальше вопросы как в примере\n\n" \
               "Пример:\n\nОбщий тест\n\nНазовите год основания города Санкт-Петербрг?\n1803/1802/1905/1703 (1703)\n\n" \
               "В честь кого назван СПбГУТ?\nМ.А.Бонч-Бруевич/А.С.Пушкин/А.Н.Николаева/Э.Р.Мамедова (М.А.Бонч-Бруевич)" \
               "\n\n...\n\nНа каком вы факультете?\nРТС/ИКСС/СЦТ/ЦЕУБИ (ИКСС)"
 
+    # Вызываем класс удаления клавиатуры у сообщения. Поэтому в конце у класса стоит "()".
+    keyboard = ReplyKeyboardRemove()
+
     # Отправка сообщения в чат.
     await message.answer(
         text=content,
+        reply_markup=keyboard,
     )
 
     # Устанавливаем состояние создания теста.
@@ -100,30 +127,62 @@ async def created_test(message: Message, state: FSMContext):
 
     message_text = message.text
 
+    objects = await get_dict_with_test(message_text)
+
+    if await create_test_from_db(objects):
+        await message.answer(
+            text="Вопрос был занесен в базу данных.",
+        )
+    else:
+        await message.answer(
+            text="Во время создания теста произошла ошибка.\nПроверьте корректность вопросов или обратитесь в поддержку"
+        )
+
+    await cmd_hello(message, state)
+
+
+async def get_dict_with_test(text: str) -> dict:
+
     objects = {}
 
-    result = message_text.split("\n\n")
+    result = text.split("\n\n")
     test_name = result[0]
     result = result[1:]
     objects["test_name"] = test_name
+    counter = 1
     for answer in result:
+        objects_ = {}
         question, answers = answer.split("?")
         question += "?"
-        objects["question"] = question
+        objects_["question"] = question
         answer_1, answer_2, answer_3, answer_4 = answers.strip().split("/")
-        answer_4, correct_answer = answer_4.split(" ")
-        correct_answer = correct_answer[1:-1]
-        objects["answer_1"] = answer_1
-        objects["answer_2"] = answer_2
-        objects["answer_3"] = answer_3
-        objects["answer_4"] = answer_4
-        objects["correct_answer"] = correct_answer
+        answer_4, correct_answer = answer_4.split("(")
+        correct_answer = correct_answer[:-1]
+        answer_4 = answer_4[:-1]
+        objects_["answer_1"] = answer_1
+        objects_["answer_2"] = answer_2
+        objects_["answer_3"] = answer_3
+        objects_["answer_4"] = answer_4
+        objects_["correct_answer"] = correct_answer
+        objects[f"quest_{counter}"] = objects_
+        counter += 1
 
-    await message.answer(
-        text="Вопрос был занесен в базу данных.",
-    )
+    return objects
 
-    await state.finish()
+
+async def create_test_from_db(test_dict: dict) -> bool:
+    response = requests.post("http://127.0.0.1:8000/create_test", json=test_dict)
+    all_good = response.text
+    if all_good == "true":
+        return True
+    else:
+        return False
+
+
+async def list_test():
+    response = requests.get("http://127.0.0.1:8000/test_list")
+    answer = response.json()
+    return answer
 
 
 async def show_profile(message: Message, state: FSMContext):
@@ -159,8 +218,7 @@ async def show_profile(message: Message, state: FSMContext):
         reply_markup=keyboard,
     )
 
-    # Завершаем состояние. Тк дальше идти некуда, кроме меню.
-    await state.finish()
+    await cmd_hello(message, state)
 
 
 async def tech_help(message: Message, state: FSMContext):
@@ -184,8 +242,7 @@ async def tech_help(message: Message, state: FSMContext):
         reply_markup=keyboard,
     )
 
-    # Завершаем состояние. Тк дальше идти некуда, кроме меню.
-    await state.finish()
+    await cmd_hello(message, state)
 
 
 # регистрируем хендлер
