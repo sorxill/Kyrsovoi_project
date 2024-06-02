@@ -4,7 +4,6 @@ from aiogram.dispatcher.filters import Command, Text
 from aiogram.types import Message, ReplyKeyboardRemove
 
 from bot.db.postgres import get_user_data
-from bot.keyboards.keyboard_for_choose_test import choose_test_keyboard
 from bot.keyboards.keyboard_for_start import keyboard_for_start
 from bot.states.states import MainState
 
@@ -80,18 +79,19 @@ async def create_test(message: Message, state: FSMContext):
     :return: None. Сообщение с текстом, а также клавиатурой "да/нет".
     """
     # Текст сообщения, которое мы отправим.
-    content = "Хотите создать тест:"
-
-    # Клавиатура для прикрепления к сообщению. "ДА" / "НЕТ".
-    keyboard_for_choose_create_test = choose_test_keyboard
+    content = "Для создания текста необходимо написать 10 вопросов и ответов к ним в определенном формате, " \
+              "описанном ниже.\nОбязательные параметры для корректного теста:\n - КАЖДЫЙ вопрос оканчивается '?'\n" \
+              "- Чтобы корректно составить тест необходимо вводить вопрос ответ СТРОГО в заданном формате, учитывая " \
+              "пробелы, знаки препинания и т.д\n\nПример:\n\n1) Назовите год основания города Санкт-Петербрг?\n" \
+              "1803/1802/1905/1703 (4)\n\n2) В честь кого назван СПбГУТ?\nМ.А.Бонч-Бруевич/А.С.Пушкин/А.Н.Николаева/" \
+              "Э.Р.Мамедова (1)\n\n...\n\n10) На каком вы факультете?\nРТС/ИКСС/СЦТ/ЦЕУБИ (2)"
 
     # Отправка сообщения в чат, с выбором да/нет.
     await message.answer(
         text=content,
-        reply_markup=keyboard_for_choose_create_test,
     )
 
-    # Устанавливаем состояние выбора да/нет.
+    # Устанавливаем состояние создания теста.
     await state.set_state(MainState.choose_create_test.state)
 
 
@@ -107,15 +107,17 @@ async def show_profile(message: Message, state: FSMContext):
     # Текст сообщения, которое мы отправим.
     content = ""
 
-    is_exist = await get_user_data(message.from_user.id)
-    if not is_exist:
+    if not await get_user_data(message.from_user.id, message.from_user.full_name):
 
-        user_id, all_test, good_tests = await get_user_data(message.from_user.id, is_create=True)
+        user_id, all_test, good_tests, name = await get_user_data(message.from_user.id,
+                                                                  message.from_user.full_name,
+                                                                  is_create=True
+                                                                  )
     else:
-        user_id, all_test, good_tests = await get_user_data(message.from_user.id)
+        user_id, all_test, good_tests, name = await get_user_data(message.from_user.id, message.from_user.full_name)
 
-    content += (f"ID пользователя: {user_id}\n\nКоличество пройденных тестов: {all_test}\n\nПоложительных тестов: "
-                f"{good_tests}")
+    content += (f"ID пользователя: {user_id}\n\nИмя пользователя: {name}\n\nКоличество пройденных тестов: {all_test}"
+                f"\n\nПоложительных тестов: {good_tests}")
 
     # Вызываем класс удаления клавиатуры у сообщения. Поэтому в конце у класса стоит "()".
     keyboard = ReplyKeyboardRemove()
@@ -162,4 +164,3 @@ def register_base_commands(dp: Dispatcher):
     dp.register_message_handler(create_test, Text(equals="Создать тест"), state=MainState.start_state)
     dp.register_message_handler(show_profile, Text(equals="Профиль"), state=MainState.start_state)
     dp.register_message_handler(tech_help, Text(equals="Тех. Поддержка"), state=MainState.start_state)
-
