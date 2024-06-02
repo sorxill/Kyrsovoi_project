@@ -28,4 +28,4 @@ def start_answer(msg: str) -> dict:
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:testing_company", host="0.0.0.0", reload=True, port=9000)
+    uvicorn.run("main:testing_company", reload=True)
