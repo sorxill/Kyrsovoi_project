@@ -1,10 +1,12 @@
+import random
+
 import requests
 from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command, Text
 from aiogram.types import Message, ReplyKeyboardRemove
 
-from bot.db.postgres import get_user_data
+from bot.db.postgres import get_user_data, add_stats_for_user
 from bot.keyboards.keyboard_for_start import keyboard_for_start
 from bot.states.states import MainState
 
@@ -89,6 +91,57 @@ async def go_to_test(message: Message, state: FSMContext):
         await cmd_hello(message, state)
 
 
+async def testing_choose(message: Message, state: FSMContext):
+    chosen_test = message.text
+
+    response = requests.get("http://127.0.0.1:8000/test_info", {"name": chosen_test})
+    all_good = response.json()
+    if all_good:
+        message_test, right_answer = await get_message_for_test(all_good)
+        await message.answer(text=message_test)
+        await state.set_data(right_answer.get("data").strip())
+        await state.set_state(MainState.testing_process)
+    else:
+        await message.answer(
+            text="Такого теста не существует, проверьте правильность."
+        )
+
+        await state.set_state(MainState.start_state)
+        return await go_to_test(message, state)
+
+
+async def testing_process(message: Message, state: FSMContext):
+    data = await state.get_data()
+    data_text = message.text
+    if data_text == data:
+        await add_stats_for_user(user_id=message.from_user.id, is_good=True)
+        await message.answer(
+            text="Вы успешно прошли тест, ваша статистика обновлена!\nПоздравляем!"
+        )
+        return await cmd_hello(message, state)
+    else:
+        await add_stats_for_user(user_id=message.from_user.id, is_good=False)
+        await message.answer(
+            text="Вы не прошли тест, ваша статистика обновлена.\nПопробуй ещё разок!"
+        )
+        return await cmd_hello(message, state)
+
+
+async def get_message_for_test(test_info: list) -> tuple[str, dict]:
+    content = "Вы выбрали тест: " + test_info[0][-1] + ("\n\n-----\nПример ответа:\n\n1-ИКСС\n2-М.А.Бонч-Бруевич\n"
+                                                        "3-1703\n-----\n")
+    right_answer = ""
+    for i in range(0, len(test_info)):
+        content += f"{i+1}) {test_info[i][0]}"
+        right_answer += f"{i+1}-{test_info[i][-2]}\n"
+        content += "\n\n"
+        answers = [test_info[i][1], test_info[i][2], test_info[i][3], test_info[i][4]]
+        answers_random = random.sample(answers, 4)
+        content += f"1){answers_random[0]}\n2){answers_random[1]}\n3){answers_random[2]}\n4){answers_random[3]}"
+        content += "\n\n"
+    return content, {"data": right_answer}
+
+
 async def create_test(message: Message, state: FSMContext):
     """
     Метод, который осуществляет переход от главного меню, к меню создание тестов, сначала спрашивает точно ли мы хотим
@@ -154,16 +207,16 @@ async def get_dict_with_test(text: str) -> dict:
         objects_ = {}
         question, answers = answer.split("?")
         question += "?"
-        objects_["question"] = question
+        objects_["question"] = question.strip()
         answer_1, answer_2, answer_3, answer_4 = answers.strip().split("/")
         answer_4, correct_answer = answer_4.split("(")
         correct_answer = correct_answer[:-1]
         answer_4 = answer_4[:-1]
-        objects_["answer_1"] = answer_1
-        objects_["answer_2"] = answer_2
-        objects_["answer_3"] = answer_3
-        objects_["answer_4"] = answer_4
-        objects_["correct_answer"] = correct_answer
+        objects_["answer_1"] = answer_1.strip()
+        objects_["answer_2"] = answer_2.strip()
+        objects_["answer_3"] = answer_3.strip()
+        objects_["answer_4"] = answer_4.strip()
+        objects_["correct_answer"] = correct_answer.strip()
         objects[f"quest_{counter}"] = objects_
         counter += 1
 
@@ -253,3 +306,5 @@ def register_base_commands(dp: Dispatcher):
     dp.register_message_handler(show_profile, Text(equals="Профиль"), state=MainState.start_state)
     dp.register_message_handler(tech_help, Text(equals="Тех. Поддержка"), state=MainState.start_state)
     dp.register_message_handler(created_test, state=MainState.choose_create_test)
+    dp.register_message_handler(testing_choose, state=MainState.choose_test)
+    dp.register_message_handler(testing_process, state=MainState.testing_process)

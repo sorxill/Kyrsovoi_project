@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from src.api.models import Test
-from src.postgres import create_test_db, get_all_unique_names_test
+from src.postgres import create_test_db, get_all_unique_names_test, get_test_info_by_name
 
 router = APIRouter()
 
@@ -40,3 +40,11 @@ async def test_list() -> list:
         return all_names
     else:
         return []
+
+
+@router.get("/test_info", description="Get info about test by name")
+async def test_info_by_name(name: str) -> tuple | None:
+    test_info = await get_test_info_by_name(name)
+    if test_info:
+        return test_info
+    return None

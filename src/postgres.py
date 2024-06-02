@@ -2,7 +2,7 @@ import psycopg2
 from psycopg2 import Error
 
 from config.app_config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
-from src.api.models import Question
+from src.api.models import Question, Test
 
 
 async def create_test_db(test_name: str, test_data: Question) -> bool:
@@ -57,3 +57,26 @@ async def get_all_unique_names_test() -> list:
 
     except (Exception, Error) as error:
         return []
+
+
+async def get_test_info_by_name(name: str) -> tuple | None:
+    try:
+        # Подключение к существующей базе данных
+        connection = psycopg2.connect(user=DB_USER,
+                                      # пароль, который указали при установке PostgreSQL
+                                      password=DB_PASS,
+                                      host=DB_HOST,
+                                      port=DB_PORT,
+                                      database=DB_NAME,
+                                      )
+
+        # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM kyrsovoi.test WHERE test_name = %s ORDER BY random() LIMIT 10", (name,))
+        result = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return result
+
+    except (Exception, Error) as error:
+        return None

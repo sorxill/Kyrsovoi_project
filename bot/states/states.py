@@ -9,7 +9,9 @@ class MainState(StatesGroup):
     :cvar start_state: Состояние начального меню. Основное состояние.
     :cvar choose_test: Состояние отвечающее за выбор тестов, которые можно пройти.
     :cvar choose_create_test: Состояние отвечающее за создание тестов.
+    :cvar testing_process: Состояние прохождение теста.
     """
     start_state = State()
     choose_test = State()
     choose_create_test = State()
+    testing_process = State()
