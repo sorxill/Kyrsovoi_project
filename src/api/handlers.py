@@ -1,8 +1,7 @@
 from fastapi import APIRouter
 
 from src.api.models import Test
-from src.postgres import create_test_db
-
+from src.postgres import create_test_db, get_all_unique_names_test
 
 router = APIRouter()
 
@@ -32,3 +31,12 @@ async def create_test(test_info: Test) -> bool:
         return True
     else:
         return False
+
+
+@router.get("/test_list", description="List of unique names test")
+async def test_list() -> list:
+    all_names = await get_all_unique_names_test()
+    if all_names is not None:
+        return all_names
+    else:
+        return []

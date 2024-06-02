@@ -34,3 +34,26 @@ async def create_test_db(test_name: str, test_data: Question) -> bool:
 
     except (Exception, Error) as error:
         return False
+
+
+async def get_all_unique_names_test() -> list:
+    try:
+        # Подключение к существующей базе данных
+        connection = psycopg2.connect(user=DB_USER,
+                                      # пароль, который указали при установке PostgreSQL
+                                      password=DB_PASS,
+                                      host=DB_HOST,
+                                      port=DB_PORT,
+                                      database=DB_NAME,
+                                      )
+
+        # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        cursor.execute("SELECT DISTINCT test_name FROM kyrsovoi.test")
+        result = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return result
+
+    except (Exception, Error) as error:
+        return []
