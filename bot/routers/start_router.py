@@ -76,23 +76,54 @@ async def create_test(message: Message, state: FSMContext):
     :param message: Сообщение вида "Создать тест". Можем получить из него информацию.
     :param state: Состояние на момент вызова этого метода. Вызывается только из основного меню.
 
-    :return: None. Сообщение с текстом, а также клавиатурой "да/нет".
+    :return: None. Сообщение с текстом.
     """
     # Текст сообщения, которое мы отправим.
     content = "Для создания текста необходимо написать 10 вопросов и ответов к ним в определенном формате, " \
               "описанном ниже.\nОбязательные параметры для корректного теста:\n - КАЖДЫЙ вопрос оканчивается '?'\n" \
               "- Чтобы корректно составить тест необходимо вводить вопрос ответ СТРОГО в заданном формате, учитывая " \
-              "пробелы, знаки препинания и т.д\n\nПример:\n\n1) Назовите год основания города Санкт-Петербрг?\n" \
-              "1803/1802/1905/1703 (4)\n\n2) В честь кого назван СПбГУТ?\nМ.А.Бонч-Бруевич/А.С.Пушкин/А.Н.Николаева/" \
-              "Э.Р.Мамедова (1)\n\n...\n\n10) На каком вы факультете?\nРТС/ИКСС/СЦТ/ЦЕУБИ (2)"
+              "пробелы, знаки препинания и т.д\n- КАЖДЫЙ тест должен иметь название\n\n" \
+              "Пример:\n\nОбщий тест\n\nНазовите год основания города Санкт-Петербрг?\n1803/1802/1905/1703 (1703)\n\n" \
+              "В честь кого назван СПбГУТ?\nМ.А.Бонч-Бруевич/А.С.Пушкин/А.Н.Николаева/Э.Р.Мамедова (М.А.Бонч-Бруевич)" \
+              "\n\n...\n\nНа каком вы факультете?\nРТС/ИКСС/СЦТ/ЦЕУБИ (ИКСС)"
 
-    # Отправка сообщения в чат, с выбором да/нет.
+    # Отправка сообщения в чат.
     await message.answer(
         text=content,
     )
 
     # Устанавливаем состояние создания теста.
     await state.set_state(MainState.choose_create_test.state)
+
+
+async def created_test(message: Message, state: FSMContext):
+
+    message_text = message.text
+
+    objects = {}
+
+    result = message_text.split("\n\n")
+    test_name = result[0]
+    result = result[1:]
+    objects["test_name"] = test_name
+    for answer in result:
+        question, answers = answer.split("?")
+        question += "?"
+        objects["question"] = question
+        answer_1, answer_2, answer_3, answer_4 = answers.strip().split("/")
+        answer_4, correct_answer = answer_4.split(" ")
+        correct_answer = correct_answer[1:-1]
+        objects["answer_1"] = answer_1
+        objects["answer_2"] = answer_2
+        objects["answer_3"] = answer_3
+        objects["answer_4"] = answer_4
+        objects["correct_answer"] = correct_answer
+
+    await message.answer(
+        text="Вопрос был занесен в базу данных.",
+    )
+
+    await state.finish()
 
 
 async def show_profile(message: Message, state: FSMContext):
@@ -164,3 +195,4 @@ def register_base_commands(dp: Dispatcher):
     dp.register_message_handler(create_test, Text(equals="Создать тест"), state=MainState.start_state)
     dp.register_message_handler(show_profile, Text(equals="Профиль"), state=MainState.start_state)
     dp.register_message_handler(tech_help, Text(equals="Тех. Поддержка"), state=MainState.start_state)
+    dp.register_message_handler(created_test, state=MainState.choose_create_test)

@@ -7,9 +7,9 @@ from psycopg2 import Error
 async def get_user_data(user_id: int, user_name: str, is_create: bool = False) -> Any | None:
     try:
         # Подключение к существующей базе данных
-        connection = psycopg2.connect(user="postgres",
+        connection = psycopg2.connect(user="admin",
                                       # пароль, который указали при установке PostgreSQL
-                                      password="postgres",
+                                      password="admin",
                                       host="127.0.0.1",
                                       port="5432",
                                       database="kyrs",
