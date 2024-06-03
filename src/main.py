@@ -7,11 +7,16 @@ from fastapi import FastAPI
 
 from src.api.handlers import router
 
-testing_company = FastAPI(
-    title="Testing of company",
+# Создание инстанса(объекта) нашего приложения на FastAPI.
+testing_student = FastAPI(
+    title="Student Testing",
 )
 
-testing_company.include_router(router)
+# Подключаем роутер с нашими хендлерами.
+testing_student.include_router(router)
 
+# Блочная конструкция запуска приложения из файла.
 if __name__ == "__main__":
-    uvicorn.run("main:testing_company", reload=True)
+
+    # Запуск приложения FastAPI, используя сервер uvicorn.
+    uvicorn.run("main:testing_student", reload=True)
