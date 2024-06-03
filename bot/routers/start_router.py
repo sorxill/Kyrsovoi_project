@@ -1,3 +1,6 @@
+"""
+Модуль с роутерами для телеграмма.
+"""
 import random
 
 import requests
@@ -114,16 +117,26 @@ async def testing_process(message: Message, state: FSMContext):
     data = await state.get_data()
     data_text = message.text
     if data_text == data:
-        await add_stats_for_user(user_id=message.from_user.id, is_good=True)
-        await message.answer(
-            text="Вы успешно прошли тест, ваша статистика обновлена!\nПоздравляем!"
-        )
+        if await add_stats_for_user(user_id=message.from_user.id, is_good=True):
+            await message.answer(
+                text="Вы успешно прошли тест, ваша статистика обновлена!\nПоздравляем!"
+            )
+        else:
+            await message.answer(
+                text="Вы успешно прошли тест, но у вас отсутствует профиль, ваши данные не сохранились.\nЧтобы создать "
+                     "профиль - зайдите в основном меню в раздел 'Профиль'."
+            )
         return await cmd_hello(message, state)
     else:
-        await add_stats_for_user(user_id=message.from_user.id, is_good=False)
-        await message.answer(
-            text="Вы не прошли тест, ваша статистика обновлена.\nПопробуй ещё разок!"
-        )
+        if await add_stats_for_user(user_id=message.from_user.id, is_good=False):
+            await message.answer(
+                text="Вы не прошли тест, ваша статистика обновлена.\nПопробуй ещё разок!"
+            )
+        else:
+            await message.answer(
+                text="Вы не прошли тест, и у вас отсутствует профиль, ваши данные не сохранились.\nЧтобы создать "
+                     "профиль - зайдите в основном меню в раздел 'Профиль'."
+            )
         return await cmd_hello(message, state)
 
 

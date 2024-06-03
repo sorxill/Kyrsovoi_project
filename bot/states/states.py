@@ -1,3 +1,6 @@
+"""
+Модуль, отвечающий за состояния бота.
+"""
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
