@@ -102,7 +102,7 @@ async def testing_choose(message: Message, state: FSMContext):
     if all_good:
         message_test, right_answer = await get_message_for_test(all_good)
         await message.answer(text=message_test)
-        await state.set_data(right_answer.get("data").strip())
+        await state.set_data(right_answer)
         await state.set_state(MainState.testing_process)
     else:
         await message.answer(
@@ -116,43 +116,72 @@ async def testing_choose(message: Message, state: FSMContext):
 async def testing_process(message: Message, state: FSMContext):
     data = await state.get_data()
     data_text = message.text
-    if data_text == data:
+
+    is_good = False
+    score = 2
+
+    data_answers = {}
+
+    ques_num = data_text.split("\n")
+    for question in ques_num:
+        answer = question.split("-", 1)
+        data_answers[int(answer[0].strip())] = answer[1].strip()
+
+    counter = 0
+
+    for i in range(10):
+        if data.get(i+1) == data_answers.get(i+1):
+            counter += 1
+
+    if 60 <= counter * 10 < 80:
+        is_good = True
+        score = 3
+
+    if 80 <= counter * 10 < 90:
+        is_good = True
+        score = 4
+    if 90 <= counter * 10 <= 100:
+        is_good = True
+        score = 5
+
+    if is_good:
         if await add_stats_for_user(user_id=message.from_user.id, is_good=True):
             await message.answer(
-                text="Вы успешно прошли тест, ваша статистика обновлена!\nПоздравляем!"
+                text=f"Вы успешно прошли тест, ваша статистика обновлена!\nПоздравляем!\n\nВаша оценка - {score}"
             )
         else:
             await message.answer(
-                text="Вы успешно прошли тест, но у вас отсутствует профиль, ваши данные не сохранились.\nЧтобы создать "
-                     "профиль - зайдите в основном меню в раздел 'Профиль'."
+                text=f"Вы успешно прошли тест, но у вас отсутствует профиль, ваши данные не сохранились.\nЧтобы создать "
+                     "профиль - зайдите в основном меню в раздел 'Профиль'.\n\nОценка по пройденному тесту - {score}"
             )
         return await cmd_hello(message, state)
     else:
         if await add_stats_for_user(user_id=message.from_user.id, is_good=False):
             await message.answer(
-                text="Вы не прошли тест, ваша статистика обновлена.\nПопробуй ещё разок!"
+                text=f"Вы не прошли тест, ваша статистика обновлена.\nПопробуй ещё разок!\n\nВаша оценка - {score}"
             )
         else:
             await message.answer(
-                text="Вы не прошли тест, и у вас отсутствует профиль, ваши данные не сохранились.\nЧтобы создать "
-                     "профиль - зайдите в основном меню в раздел 'Профиль'."
+                text=f"Вы не прошли тест, и у вас отсутствует профиль, ваши данные не сохранились.\nЧтобы создать "
+                     f"профиль - зайдите в основном меню в раздел 'Профиль'.\n\nВаша оценка - {score}"
             )
+
         return await cmd_hello(message, state)
 
 
 async def get_message_for_test(test_info: list) -> tuple[str, dict]:
     content = "Вы выбрали тест: " + test_info[0][-1] + ("\n\n-----\nПример ответа:\n\n1-ИКСС\n2-М.А.Бонч-Бруевич\n"
                                                         "3-1703\n-----\n")
-    right_answer = ""
+    right_answer = {}
     for i in range(0, len(test_info)):
         content += f"{i+1}) {test_info[i][0]}"
-        right_answer += f"{i+1}-{test_info[i][-2]}\n"
+        right_answer[i+1] = test_info[i][-2]
         content += "\n\n"
         answers = [test_info[i][1], test_info[i][2], test_info[i][3], test_info[i][4]]
         answers_random = random.sample(answers, 4)
         content += f"1){answers_random[0]}\n2){answers_random[1]}\n3){answers_random[2]}\n4){answers_random[3]}"
         content += "\n\n"
-    return content, {"data": right_answer}
+    return content, right_answer
 
 
 async def create_test(message: Message, state: FSMContext):
